@@ -1,0 +1,117 @@
+version: '3.5'
+
+services:
+  prediction:
+    build:
+      context: ./Prediction
+      dockerfile: Dockerfile
+      target: dependency-base
+    working_dir: /app
+    container_name: prediction-service
+    tty: true
+    stdin_open: true
+    depends_on:
+      - database
+    volumes:
+      - ./:/app
+    ports:
+      - ${APP_FORWARD_PORT_PREDICTION:-8080}:3000
+    networks:
+      - betpool-network
+  
+  games:
+    build:
+      context: ./Games
+      dockerfile: Dockerfile
+      target: dependency-base
+    working_dir: /app
+    container_name: games-service
+    tty: true
+    stdin_open: true
+    depends_on:
+      - database
+    volumes:
+      - ./Games:/app
+    ports:
+      - ${APP_FORWARD_PORT_GAMES:-8080}:3000
+    networks:
+      - betpool-network
+
+  rewards:
+    build:
+      context: ./Rewards
+      dockerfile: Dockerfile
+      target: dependency-base
+    working_dir: /app
+    container_name: rewards-service
+    tty: true
+    stdin_open: true
+    depends_on:
+      - database
+    volumes:
+      - ./:/app
+    ports:
+      - ${APP_FORWARD_PORT_REWARDS:-8080}:3000
+    networks:
+      - betpool-network
+
+  database:
+    image: postgres:16-alpine3.19
+    container_name: betpool-db-server
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=${DB_USER:-"root"}
+      - POSTGRES_PASSWORD=${DB_PASSWORD:-"secret"}
+      - POSTGRES_DB=${DB_NAME:-"betpool_db"}
+    volumes:
+      - postgresql-data:/var/lib/postgresql/data
+    networks:
+      - betpool-network
+
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: pgadmin-container-app
+    restart: unless-stopped
+    depends_on:
+      - database
+    ports:
+      - ${PGADMIN_FORWARD_PORT:-8081}:80
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=${PGADMIN_DEFAULT_EMAIL}
+      - PGADMIN_DEFAULT_PASSWORD=${PGADMIN_DEFAULT_PASSWORD}
+    volumes:
+      - pgadmin-data:/var/lib/pgadmin
+    networks:
+      - betpool-network
+
+  rabbitmq:
+    image: rabbitmq:3.13-management
+    hostname: betpool-rabbitmq
+    container_name: betpool-rabbitmq
+    tty: true
+    ports:
+      - "5672:5672"
+      - "${RABBITMQ_FORWARD_MANAGEMENT_PORT:-15672}:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USERNAME:-"guest"}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-"guest"}
+      RABBITMQ_DEFAULT_VHOST: ${RABBITMQ_DEFAULT_VHOST:-"/"}
+    volumes:
+      - 'rabbitmq-data:/var/lib/rabbitmq'
+    networks:
+      - betpool-network
+
+volumes:
+  postgresql-data:
+    driver: local
+  rabbitmq-data:
+    driver: local
+  pgadmin-data:
+    driver: local
+
+networks:
+  betpool-network:
+    name: betpool-network
+    external: true
