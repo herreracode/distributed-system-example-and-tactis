@@ -24,7 +24,9 @@ class Game {
 
     events = [];
 
-    constructor(status,
+    constructor(
+        uuidGame,
+        status,
                 localTeam,
                 awayTeam,
                 Score) {
@@ -33,9 +35,11 @@ class Game {
         this.localTeamName = localTeam
         this.awayTeamName = awayTeam
         this.Score = Score
+        this.uuidGame = uuidGame
     }
 
     static create(
+        uuidGame,
         localTeam,
         awayTeam
     ) {
@@ -43,6 +47,7 @@ class Game {
         //TODO: raise the event GAme create
 
         return new Game(
+            uuidGame,
             StatusEnum.PENDING,
             localTeam,
             awayTeam,
@@ -54,21 +59,21 @@ class Game {
 
         this.status = StatusEnum.PROGRESS
 
-        this.events.push( new GameEvents.GameInProgress(this))
+        this.events.push( new GameEvents.GameInProgress(this.uuidGame))
     }
 
     finish(){
 
         this.status = StatusEnum.FINISH
 
-        this.events.push( new GameEvents.GameFinished(this))
+        this.events.push( new GameEvents.GameFinished(this.uuidGame))
     }
 
     postpone(){
 
         this.status = StatusEnum.POSTPONED
 
-        this.events.push( new GameEvents.GamePostponed(this))
+        this.events.push( new GameEvents.GamePostponed(this.uuidGame))
     }
 }
 
