@@ -1,5 +1,7 @@
 require("dotenv").config();
 
+const router = require("./src/Feature/routes")
+
 const express = require('express');
 
 const app = express();
@@ -8,6 +10,7 @@ app.use(express.json({ extended: true }));
 app.use(express.urlencoded({ extended: true }));
 
 
+app.use('/api/v1', router);
 
 app.get('/', (req, res) => { res.send('Server is up and running!') });
 
